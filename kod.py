@@ -221,6 +221,4 @@ for dates, list_of_paths in L9_dict.items():
     BrighTemp = calc_kod.Brightness_Temperature(TOA_radiance_B10, Emis, OUT_FOLDER, 'BrightTemp_L9_' + dates)
 
 
-   # GroundHeatFlux_path = calc_stch.GroundHF(Albedo_liang, ndvi_TIF, LST_b10, TotalRadiation_path, OUT_FOLDER, 'GroundHeatFlux_' + dates)
-
 pprint.pprint('All done and in order :)')
