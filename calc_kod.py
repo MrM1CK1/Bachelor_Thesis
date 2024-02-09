@@ -14,29 +14,30 @@ import sys
 from osgeo import gdal, osr
 from numpy import log
 from rasterio.mask import mask
+import fiona
 
 
 print('Import done.')
 
+def find_path(input_folder, file_name):
+    path_list_folder = []
+    for root, dics, files in os.walk(input_folder, topdown=False):
+        for name in files:
+            if name.endswith(file_name) :
+                path_list_folder.append(os.path.join(root, name))
+    return path_list_folder
 
 #https://gist.github.com/mhweber/1af47ef361c3b20184455060945ac61b
 def Raster_clip(inras, outras, SQUARE):
     src  = rasterio.open(inras)
-
     # Create a square GeoDataFrame from the square
     df = gpd.GeoDataFrame({'geometry': [SQUARE]}, crs="EPSG:4326")
-
     df = df.to_crs(src.crs)
-
     def getFeatures(gdf):
-
         """Function to parse features from GeoDataFrame in such a manner that rasterio wants them"""
         return [json.loads(gdf.to_json())['features'][0]['geometry']]
     coords = getFeatures(df)
-
     clipped_array, clipped_transform = mask(dataset=src, shapes=coords, crop=True)
-
-
     out_meta = src.meta.copy()
     out_meta.update({"driver": "GTiff",
                     "height": clipped_array.shape[1],
