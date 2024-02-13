@@ -43,13 +43,12 @@ IN_FOLDER = (os.path.join(SCRIPT_DIR, r'input'))            #Input folder in the
 OUT_FOLDER = (os.path.join(SCRIPT_DIR, r'output'))          #Output folder in the same directory
 CLIPPED = (os.path.join(SCRIPT_DIR, r'output'))             #Clipped folder in the output folder
 
-SQUARE = box(17.1895, 49.4985, 17.4593, 49.6712) #Coordinates of the area of interest
+SQUARE = box(17.0846,49.5122,18.5743,49.9015) #Coordinates of the area of interest
 EPSG_CODE = 32633       #EPSG code of the area of interest
 L8_dict = {}
 L9_dict = {}
 L8_metadata = {}
 landsate_date = []
-#Function to find the path of the files
 
 
 landsat_tif = calc_kod.find_path(IN_FOLDER, ".TIF")   ###L1 i L2
@@ -115,7 +114,6 @@ for date in landsate_date:
                 
             elif 'SR_B4' in path:
                 b4_l2 = path
-                
                 reflectance_MULT_B4 = float((L8_metadata['REFLECTANCE_MULT_BAND_4']))
                 reflectance_ADD_B4 = float((L8_metadata['REFLECTANCE_ADD_BAND_4']))
                 
@@ -144,10 +142,20 @@ for date in landsate_date:
                 
             elif 'L1TP' and 'B10' in path:
                 b10_l1  = path
-
+                radiance_MULT_B10_l1 = float((L8_metadata['RADIANCE_MULT_BAND_10']))
+                radiance_ADD_B10_l1 = float((L8_metadata['RADIANCE_ADD_BAND_10']))
+                K1_CONSTANT_BAND_10_L1 = float((L8_metadata['K1_CONSTANT_BAND_10']))
+                K2_CONSTANT_BAND_10_L1 = float((L8_metadata['K2_CONSTANT_BAND_10']))
+    
     ndvi_TIF = calc_kod.NDVI(b4_l2, b5_l2, OUT_FOLDER, 'NDVI_' + date)   
     VegC = calc_kod.VC(ndvi_TIF, OUT_FOLDER, 'VC_' + date)
-    
+
+    TOA_radiance_B10_L1 = calc_kod.TOA_Radiance(b10_l1, radiance_ADD_B10_l1, radiance_MULT_B10_l1, OUT_FOLDER, 'TOA_Radiance_B10_' + date)
+    BrighTemp = calc_kod.Brightness_Temperature(radiance_ADD_B10_l1,radiance_MULT_B10_l1, b10_l1, OUT_FOLDER, 'BrightTemp_' + date)
+
+    Emmisivity = calc_kod.LSE(b4_l2, ndvi_TIF, VegC, OUT_FOLDER, 'Emiss_' + date)
+    LSTemperature = calc_kod.LST(Emmisivity, BrighTemp, b10_l1, OUT_FOLDER, 'LST_' + date)
+
 # Extracting information from the metadata file
 ## neexistuje tady zadne rozdeleni mezi L1 a L2, zadny filtr.. nevime na co python saha
 ## tady je potreba presne definovat, jestli pracuju s L1 nebo L2, jinak se to bude motat
