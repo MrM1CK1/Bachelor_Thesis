@@ -164,52 +164,57 @@ def VC(ndvi, out_folder, name = "VC"):
     return result_VC
 
 
-#Land Surface Temperature
-def LST(Rad_b10,k1,k2, out_folder, name = "LST"):
-    toa_rad_band10 = np.array(tf.imread(Rad_b10))
-    k1_c = np.array(k1)
-    k2_c = np.array(k2)
-      
-    calc_LST = (k2_c / log(k1_c / toa_rad_band10 + 1)) - 273.15
-        
-    result_LST = os.path.join(out_folder, name + ".TIF")
-        
-    GeoRef(calc_LST, toa_rad_band10, result_LST)
-
-    return result_LST
-
-
-#Emissivity
-def Emissivity(ndvi, LST, out_folder, name = "EMISS"):
-    # Calculate emissivity based on NDVI and land surface temperature
-    ndvi_arr = np.array(tf.imread(ndvi))
-    LST_arr = np.array(LST)
-
-  # Coefficients based on studies and band selection
-    a = 0.0046
-    b = -0.0841
-
-    calc_Emiss = 0.92 + a * (1 - ndvi_arr) + b * (1 - ndvi_arr)**2 + (0.92 - 0.98) * np.exp(-LST_arr / 300)
-  # Calculate emissivity
-    result_Emissivity = os.path.join(out_folder, name + ".TIF") 
-    
-    GeoRef(calc_Emiss, LST, result_Emissivity)
-
-    return result_Emissivity
-
-
-
-
 #Brightness Temperature
-def Brightness_Temperature(TOA_rad_B10,Emissi , out_folder, name = "BriTemp"):
-    toa_rad_band10 = tf.imread(TOA_rad_B10)
-    Emiss = tf.imread(Emissi)
+#Add = Radiance Add Band
+#Mult = Radiance Multi Band
+#b10_l1 = Band 10
+def Brightness_Temperature(Add, Mult, b10_l1, out_folder, name = "BriTemp"):
+    K1 = 774.8853
+    K2 = 1321.0789
+    Add = np.array(Add)
+    Mult = np.array(Mult).astype(rasterio.float32)
+    b10 = tf.imread(b10_l1)
 
-    stefan_boltzmann = 5.6704e-8  # W/m^2/K^4
-    calc_BriTemp = (toa_rad_band10 / stefan_boltzmann / Emiss)**0.5 - 273.15
+    calc_BT = (K2 / np.log((K1 / (Mult * b10 + Add)) + 1)) - 273.15
     
-    result_BriTemp = os.path.join(out_folder, name + ".TIF")
+    result_BT = os.path.join(out_folder, name + ".TIF")
     
-    GeoRef(calc_BriTemp, TOA_rad_B10, result_BriTemp)
+    GeoRef(calc_BT, b10_l1, result_BT)
+    
+    return result_BT
 
-    return result_BriTemp
+
+#Land Surface Emissivity
+#B10 = Brightness Temperature
+#VC = Vegetation Cover
+#NDVI = Normalized Difference Vegetation Index
+def LSE(b4, ndvi, VegC, out_folder, name = "LSE"):
+    b4_arr = np.array(tf.imread(b4))
+    ndvi_arr = np.array(tf.imread(ndvi))
+    VegC_arr = np.array(tf.imread(VegC))
+    
+    calc_LSE = (b4_arr - (0.1 * VegC_arr * ndvi_arr)) / (1 - VegC_arr)
+    
+    result_LSE = os.path.join(out_folder, name + ".TIF")
+    
+    GeoRef(calc_LSE, b4, result_LSE)
+    
+    return result_LSE
+
+
+#Land Surface Temperature
+#Emiss = Emissivity
+#BrighT = Brightness Temperature
+#B10 = Band 10
+def LST(Emiss,BrighT,B10_l1, out_folder, name = "LST"):
+    Emiss_arr = np.array(tf.imread(Emiss))
+    BrighT_arr = np.array(tf.imread(BrighT))
+    B10_arr = np.array(tf.imread(B10_l1))
+    
+    calc_LST = (BrighT_arr / (1 + (0.00115 * B10_arr / 1.4388) * log(Emiss_arr))) - 273.15
+    
+    result_LST = os.path.join(out_folder, name + ".TIF")
+    
+    GeoRef(calc_LST, B10_l1, result_LST)
+    
+    return result_LST
