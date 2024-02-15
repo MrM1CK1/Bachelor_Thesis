@@ -188,13 +188,14 @@ def Brightness_Temperature(Add, Mult, b10_l1, out_folder, name = "BriTemp"):
 #B10 = Brightness Temperature
 #VC = Vegetation Cover
 #NDVI = Normalized Difference Vegetation Index
+#https://www.sciencedirect.com/science/article/pii/S0034425704000574
 def LSE(b4, ndvi, VegC, out_folder, name = "LSE"):
-    b4_arr = np.array(tf.imread(b4))
-    ndvi_arr = np.array(tf.imread(ndvi))
+    #b4_arr = np.array(tf.imread(b4))
+    #ndvi_arr = np.array(tf.imread(ndvi))
     VegC_arr = np.array(tf.imread(VegC))
     
-    calc_LSE = (b4_arr - (0.1 * VegC_arr * ndvi_arr)) / (1 - VegC_arr)
-    
+    calc_LSE = (0.004 * VegC_arr) + 0.986
+
     result_LSE = os.path.join(out_folder, name + ".TIF")
     
     GeoRef(calc_LSE, b4, result_LSE)
@@ -211,7 +212,7 @@ def LST(Emiss,BrighT,B10_l1, out_folder, name = "LST"):
     BrighT_arr = np.array(tf.imread(BrighT))
     B10_arr = np.array(tf.imread(B10_l1))
     
-    calc_LST = (BrighT_arr / (1 + (0.00115 * B10_arr / 1.4388) * log(Emiss_arr))) - 273.15
+    calc_LST = (BrighT_arr / (1 + (0.00115 * B10_arr / 1.4388) * log(Emiss_arr)))
     
     result_LST = os.path.join(out_folder, name + ".TIF")
     
