@@ -219,3 +219,78 @@ def LST(Emiss,BrighT,B10_l1, out_folder, name = "LST"):
     GeoRef(calc_LST, B10_l1, result_LST)
     
     return result_LST
+
+
+#Net Radiation
+#LSE = Land Surface Emissivity
+#LST = Land Surface Temperature
+#Albedo = Albedo
+#Rsin = Solar Radiation
+def Rn(LSE,LST,Albedo,Rsin, out_folder, name = "Rn"):
+    LSE_arr = np.array(tf.imread(LSE))
+    LST_arr = np.array(tf.imread(LST))
+    Albedo_arr = np.array(tf.imread(Albedo))
+    Rsin_arr = np.array(tf.imread(Rsin))
+
+    #Constants
+    stefan_boltzmann_constant = 5.67e-8 # W/m^2/K^4
+    Emisivity_constant = 0.78
+
+    Rlout = LSE_arr * 5.6703 * 10.0 ** (-8.0) * LST_arr ** 4
+    Rlin = Emisivity_constant * 5.6703 * 10.0 ** (-8.0) * LST_arr ** 4
+    Rsout =  Albedo_arr * Rsin
+
+    calc_Rn = Rsin_arr - Rsout + Rlout - Rlin
+    
+    result_Rn = os.path.join(out_folder, name + ".TIF")
+    
+    GeoRef(calc_Rn, Rsin, result_Rn)
+    
+    return result_Rn
+
+
+#Ground Heat Flux
+#Rn = Net Radiation
+#ndvi = Normalized Difference Vegetation Index
+#https://www.mdpi.com/2072-4292/14/21/5629
+#𝐺0=𝑅𝑛⋅[Γ𝑐+(1−𝑓𝑐)⋅(Γ𝑠−Γ𝑐)]
+def GHFlux_1(Rn, ndvi, out_folder, name = "GHE"):
+    Rn_arr = np.array(tf.imread(Rn))
+    ndvi_arr = np.array(tf.imread(ndvi))
+    
+    calc_GHE = Rn_arr * (0.05 + (1 - ndvi_arr) * (0.315-0.05))
+    
+    result_GHE = os.path.join(out_folder, name + ".TIF")
+    
+    GeoRef(calc_GHE, Rn, result_GHE)
+    
+    return result_GHE
+
+
+def GHFlux_2(albedo, lst,ndvi, totalRadiation, out_folder, name = "GHE"):
+    albedo_arr = np.array(tf.imread(albedo))
+    lst_arr = np.array(tf.imread(lst))
+    totalRadiation_arr = np.array(tf.imread(totalRadiation))
+    ndvi_arr = np.array(tf.imread(ndvi))
+
+  # Calculate G
+    calc_GHE = (lst_arr/albedo_arr) * ((0.0038*albedo_arr)+(0.0074*(albedo_arr**2))) * (1-0.98*(ndvi_arr**4))
+    
+    result_GHE = os.path.join(out_folder, name + ".TIF")
+    
+    GeoRef(calc_GHE, lst, result_GHE)
+    
+    return result_GHE
+
+
+
+def Gr(RN,out_folder, name = "G"):
+    RN_arr = np.array(tf.imread(RN))
+    
+    calc_G = 0.1 * RN_arr
+    
+    result_G = os.path.join(out_folder, name + ".TIF")
+    
+    GeoRef(calc_G, RN, result_G)
+    
+    return result_G
