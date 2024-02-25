@@ -15,27 +15,6 @@ from shapely.geometry import box
 
 import calc_kod
 import sys
-#print('The import was successful!')
-
-
-### postup pro výpocet LST
-# 1. BT - potřebná data: Kelvin consrant 1, Kelvin constant 2, Radiance add Band, Radiance Multi Band, pásmo L1_B10
-#       - uroven zpracovani L1 !!!!
-#       - pásmo: B10
-# 
-# 2. NDVI - potrebna data: B4, B5     
-#       - úroveň zpracování L2
-# 
-# 3. VegC - potrebná data: ndvi
-#       -úroven zpracovani: L2
-
-# 5. LSE - Surface Emissivity
-#       - úroven zpracování: L2
-#       - potrebná data: B4, NDVI, VegC
-#
-# 6. LST - potrebna data: LSE, BT, B10_L1
-#        - úroven zpracovani: L1/L2
-#
 
 
 SCRIPT_DIR = os.path.dirname((os.path.abspath(__file__)))   #Directory of the script
@@ -52,13 +31,13 @@ landsate_date = []
 
 
 landsat_tif = calc_kod.find_path(IN_FOLDER, ".TIF")   ###L1 i L2
-# 'input/LC08_L1TP_190025_20220627_20220706_02_T1/LC08_L1TP_190025_20220627_20220706_02_T1_SAA.TIF'
 
+RadiShortIn = pa.read_csv((os.path.join(SCRIPT_DIR, 'Rsin.csv')), delimiter =';') #RadiationShort.csv
 
 #Finding the Landsat images (Landsat Level 1)
 for landsat_path in landsat_tif:
     
-    landsat_name = os.path.basename(landsat_path) #'LC08_L1TP_190025_20220627_20220706_02_T1_SAA.TIF'
+    landsat_name = os.path.basename(landsat_path) 
     if 'L1TP' in landsat_name:
         date = landsat_name.split('_')[3] #20220627
         if date not in landsate_date:
@@ -69,10 +48,18 @@ for landsat_path in landsat_tif:
         else:
             L8_dict[date] = [landsat_path]      
 
-#for landsat_path in landsat_tif: #'input/LC08_L1TP_190025_20220627_20220706_02_T1/LC08_L1TP_190025_20220627_20220706_02_T1_B6.TIF'
+#Joining the Rsin values with the Landsat images
+for date in landsate_date:
+
+    Rsin_value = RadiShortIn.loc[RadiShortIn['date'] == int(date), 'value'].values[0]
+
+    if Rsin_value:
+        Rsin_value = RadiShortIn["value"].mean()
+    else:
+        Rsin_value = Rsin_value.to_numpy()[0]
+
+        
 for landsat_path in landsat_tif:
-    
-    #'/home/tereza/Documents/GitHub/repos/Bachelor_Thesis/output\\LC08_L1TP_190025_20220627_20220706_02_T1_B5_Clipped.TIF'
     if 'B1.TIF' in landsat_path:
         txt_path = landsat_path.replace('B1.TIF', 'MTL.txt')
         
@@ -82,21 +69,17 @@ for landsat_path in landsat_tif:
                 key, value = line.strip().split(' = ')
                 L8_metadata[key] = value                                 
         metadata_file.close()
-        #{'CLOUD_COVER': '5.20',
-            #'CLOUD_COVER_LAND': '5.20'...}
         break
     
 # Clipping the images
-#for path in landsat_path:
 list_of_paths_clipped = []
 for landsat_path in landsat_tif:
     image_name = os.path.basename(landsat_path).replace('.TIF', '')   
     if 'B' in image_name.split('_')[-1]: ## vyfiltruje pouze pásma s DATY (Bx)
-        out_path = os.path.join(CLIPPED, image_name + '_Clipped.TIF') #output/LC08_L1TP_190025_20220627_20220706_02_T1_B9_Clipped.TIF
+        out_path = os.path.join(CLIPPED, image_name + '_Clipped.TIF') 
         calc_kod.Raster_clip(landsat_path, out_path, SQUARE)
-        list_of_paths_clipped.append(out_path) # pripojit oklipovane paths do seznamu
-        #['output/LC08_L2SP_190025_20220627_20220706_02_T1_ST_B10_Clipped.TIF',
-        #'/output/LC08_L2SP_190025_20220627_20220706_02_T1_SR_B1_Clipped.TIF']
+        list_of_paths_clipped.append(out_path) 
+
 
 for date in landsate_date:
     for path in list_of_paths_clipped:
@@ -165,9 +148,9 @@ for date in landsate_date:
     Albedo_Tasumi = calc_kod.Albedo_Tasumi(TOA_refle_b2, TOA_refle_b4, TOA_refle_b5, TOA_refle_b7, OUT_FOLDER, 'Albedo_Tasumi_' + date)
 
 
-    #Rn = calc_kod.Rn(Emmisivity, LSTemperature, Albedo_liang, Rsin_value, OUT_FOLDER, 'Rn_' + date)
-    #GroundHeatFlux = calc_kod.GHFlux_1(Rn, ndvi_TIF, OUT_FOLDER, 'GHF_' + date)
+    Rn = calc_kod.Rn(Emmisivity, LSTemperature, Albedo_liang, Rsin_value, OUT_FOLDER, 'Rn_' + date)
+    GroundHeatFlux = calc_kod.GHFlux_1(Rn, ndvi_TIF, OUT_FOLDER, 'GHF_' + date)
     GroundHeatFlux_2 = calc_kod.GHFlux_2(Albedo_liang,LSTemperature, ndvi_TIF,TOA_radiance_B10_L1, OUT_FOLDER, 'GHF_2_' + date)
-    #Gr = calc_kod.Gr(Rn, OUT_FOLDER, 'G_' + date)
+    Gr = calc_kod.Gr(Rn, OUT_FOLDER, 'G_' + date)
 
 pprint('All done and in order')
