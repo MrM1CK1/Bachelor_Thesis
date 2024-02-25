@@ -230,7 +230,7 @@ def Rn(LSE,LST,Albedo,Rsin, out_folder, name = "Rn"):
     LSE_arr = np.array(tf.imread(LSE))
     LST_arr = np.array(tf.imread(LST))
     Albedo_arr = np.array(tf.imread(Albedo))
-    Rsin_arr = np.array(tf.imread(Rsin))
+    Rsin_arr = np.array(Rsin)
 
     #Constants
     stefan_boltzmann_constant = 5.67e-8 # W/m^2/K^4
@@ -244,7 +244,7 @@ def Rn(LSE,LST,Albedo,Rsin, out_folder, name = "Rn"):
     
     result_Rn = os.path.join(out_folder, name + ".TIF")
     
-    GeoRef(calc_Rn, Rsin, result_Rn)
+    GeoRef(calc_Rn, LSE, result_Rn)
     
     return result_Rn
 
@@ -281,7 +281,6 @@ def GHFlux_2(albedo, lst,ndvi, totalRadiation, out_folder, name = "GHE"):
     GeoRef(calc_GHE, lst, result_GHE)
     
     return result_GHE
-
 
 
 def Gr(RN,out_folder, name = "G"):
