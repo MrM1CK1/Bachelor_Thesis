@@ -251,14 +251,14 @@ def Rn(LSE,LST,Albedo,Rsin, out_folder, name = "Rn"):
 
 #Ground Heat Flux
 #Rn = Net Radiation
-#ndvi = Normalized Difference Vegetation Index
+#VegC = Vegetation Cover
 #https://www.mdpi.com/2072-4292/14/21/5629
 #𝐺0=𝑅𝑛⋅[Γ𝑐+(1−𝑓𝑐)⋅(Γ𝑠−Γ𝑐)]
-def GHFlux_1(Rn, ndvi, out_folder, name = "GHE"):
+def GHFlux_1(Rn, VegC, out_folder, name = "GHE"):
     Rn_arr = np.array(tf.imread(Rn))
-    ndvi_arr = np.array(tf.imread(ndvi))
+    VegC_arr = np.array(tf.imread(VegC))
     
-    calc_GHE = Rn_arr * (0.05 + (1 - ndvi_arr) * (0.315-0.05))
+    calc_GHE = Rn_arr * (0.05 + (1 - VegC_arr) * (0.315-0.05))
     
     result_GHE = os.path.join(out_folder, name + ".TIF")
     
@@ -281,6 +281,7 @@ def GHFlux_2(albedo, lst,ndvi, totalRadiation, out_folder, name = "GHE"):
     GeoRef(calc_GHE, lst, result_GHE)
     
     return result_GHE
+
 
 
 def Gr(RN,out_folder, name = "G"):
